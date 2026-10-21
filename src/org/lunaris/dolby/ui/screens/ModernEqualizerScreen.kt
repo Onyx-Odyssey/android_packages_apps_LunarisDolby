@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
@@ -61,7 +62,8 @@ enum class EqualizerViewMode {
 @Composable
 fun ModernEqualizerScreen(
     viewModel: EqualizerViewModel,
-    navController: NavController
+    navController: NavController,
+    bottomPadding: Dp = 0.dp,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -142,6 +144,7 @@ fun ModernEqualizerScreen(
                     viewModel = viewModel,
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
+                    bottomPadding = bottomPadding,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -230,6 +233,7 @@ private fun ModernEqualizerContent(
     viewModel: EqualizerViewModel,
     viewMode: EqualizerViewMode,
     onViewModeChange: (EqualizerViewMode) -> Unit,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val isFlatPreset = state.currentPreset.name == stringResource(R.string.dolby_preset_default)
@@ -241,7 +245,7 @@ private fun ModernEqualizerContent(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 12.dp + bottomPadding),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         DolbyPageHeading(

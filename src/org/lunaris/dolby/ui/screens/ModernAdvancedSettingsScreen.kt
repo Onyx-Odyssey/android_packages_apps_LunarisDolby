@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import org.lunaris.dolby.R
@@ -30,7 +31,8 @@ import org.lunaris.dolby.ui.viewmodel.DolbyViewModel
 @Composable
 fun ModernAdvancedSettingsScreen(
     viewModel: DolbyViewModel,
-    navController: NavController
+    navController: NavController,
+    bottomPadding: Dp = 0.dp,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -64,6 +66,7 @@ fun ModernAdvancedSettingsScreen(
                     listState = listState,
                     viewModel = viewModel,
                     navController = navController,
+                    bottomPadding = bottomPadding,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -103,12 +106,15 @@ private fun ModernAdvancedSettingsContent(
     listState: LazyListState,
     viewModel: DolbyViewModel,
     navController: NavController,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(
+            start = 20.dp, top = 12.dp, end = 20.dp, bottom = 12.dp + bottomPadding,
+        ),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item {

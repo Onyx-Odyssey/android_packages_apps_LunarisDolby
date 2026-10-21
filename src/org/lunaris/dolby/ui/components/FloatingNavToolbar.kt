@@ -8,20 +8,24 @@
 package org.lunaris.dolby.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.lunaris.dolby.R
@@ -36,52 +40,69 @@ fun FloatingNavToolbar(
 ) {
     val haptic = rememberHapticFeedback()
     val scope = rememberCoroutineScope()
-    val navigate: (String) -> Unit = { route ->
-        if (route != currentRoute) {
-            scope.launch { haptic.performHaptic(HapticFeedbackHelper.HapticIntensity.CLICK) }
-            onNavigate(route)
-        }
-    }
+    val routes = listOf("settings", "equalizer", "advanced")
+    val selectedIndex = routes.indexOf(currentRoute).coerceAtLeast(0)
+    val fontScale = LocalDensity.current.fontScale
+    val width = 360.dp * fontScale.coerceIn(1f, 1.3f)
 
-    Surface(
-        modifier = modifier
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .widthIn(max = 440.dp)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+    HorizontalFloatingToolbar(
+        expanded = true,
+        modifier = modifier,
+        shape = CircleShape,
+        contentPadding = PaddingValues(6.dp),
+        expandedShadowElevation = 6.dp,
+        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+            toolbarContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            toolbarContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         ),
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
     ) {
-        Row(
-            modifier = Modifier.padding(6.dp).selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            NavToolbarItem(
-                icon = Icons.Rounded.Home,
-                label = stringResource(R.string.home),
-                selected = currentRoute == "settings",
-                onClick = { navigate("settings") },
-                modifier = Modifier.weight(1f),
+        BoxWithConstraints(Modifier.widthIn(max = width).width(width)) {
+            val itemWidth = maxWidth / routes.size
+            val compact = maxWidth / fontScale < 320.dp
+            val offset by animateDpAsState(
+                targetValue = itemWidth * selectedIndex,
+                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                label = "navigation_selection",
             )
-            NavToolbarItem(
-                icon = Icons.Rounded.GraphicEq,
-                label = stringResource(R.string.equalizer),
-                selected = currentRoute == "equalizer",
-                onClick = { navigate("equalizer") },
-                modifier = Modifier.weight(1f),
-            )
-            NavToolbarItem(
-                icon = Icons.Rounded.Tune,
-                label = stringResource(R.string.advanced),
-                selected = currentRoute == "advanced",
-                onClick = { navigate("advanced") },
-                modifier = Modifier.weight(1f),
-            )
+
+            Box {
+                Box(Modifier.matchParentSize()) {
+                    Box(
+                        Modifier.offset(x = offset)
+                            .width(itemWidth)
+                            .fillMaxHeight()
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    )
+                }
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup()) {
+                    routes.forEachIndexed { index, route ->
+                        NavToolbarItem(
+                            icon = when (route) {
+                                "equalizer" -> Icons.Rounded.GraphicEq
+                                "advanced" -> Icons.Rounded.Tune
+                                else -> Icons.Rounded.Home
+                            },
+                            label = stringResource(when (route) {
+                                "equalizer" -> R.string.equalizer
+                                "advanced" -> R.string.advanced
+                                else -> R.string.home
+                            }),
+                            selected = selectedIndex == index,
+                            compact = compact,
+                            onClick = {
+                                if (route != currentRoute) {
+                                    scope.launch {
+                                        haptic.performHaptic(HapticFeedbackHelper.HapticIntensity.CLICK)
+                                    }
+                                    onNavigate(route)
+                                }
+                            },
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -91,38 +112,42 @@ private fun NavToolbarItem(
     icon: ImageVector,
     label: String,
     selected: Boolean,
+    compact: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-        label = "navigation_container",
+    val color by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSecondaryContainer,
+        animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
+        label = "navigation_content",
     )
-    Surface(
-        selected = selected,
-        onClick = onClick,
-        modifier = modifier
-            .heightIn(min = 64.dp)
-            .squishable(enabled = true, scaleDown = 0.95f)
-            .semantics { role = Role.Tab },
-        shape = RoundedCornerShape(26.dp),
-        color = containerColor,
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-    ) {
+    val itemModifier = modifier
+        .heightIn(min = 48.dp)
+        .clip(CircleShape)
+        .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+        .squishable(scaleDown = 0.95f)
+        .padding(horizontal = 8.dp, vertical = 10.dp)
+    val content: @Composable () -> Unit = {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp), tint = color)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = color,
+            textAlign = TextAlign.Center,
+        )
+    }
+    if (compact) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            modifier = itemModifier,
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
-            Text(
-                label,
-                style = if (selected) MaterialTheme.typography.labelMediumEmphasized
-                    else MaterialTheme.typography.labelMedium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            )
-        }
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        ) { content() }
+    } else {
+        Row(
+            modifier = itemModifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { content() }
     }
 }

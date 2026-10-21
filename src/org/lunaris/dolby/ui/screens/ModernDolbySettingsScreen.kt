@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import org.lunaris.dolby.R
@@ -30,7 +31,8 @@ import org.lunaris.dolby.ui.viewmodel.DolbyViewModel
 @Composable
 fun ModernDolbySettingsScreen(
     viewModel: DolbyViewModel,
-    navController: NavController
+    navController: NavController,
+    bottomPadding: Dp = 0.dp,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
@@ -46,14 +48,14 @@ fun ModernDolbySettingsScreen(
                 actions = {
                     IconButton(onClick = { showCreditsDialog = true }) {
                         Icon(
-                            Icons.Default.Info, 
+                            Icons.Default.Info,
                             contentDescription = stringResource(R.string.dolby_credits),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showResetDialog = true }) {
                         Icon(
-                            Icons.Default.RestartAlt, 
+                            Icons.Default.RestartAlt,
                             contentDescription = stringResource(R.string.dolby_reset_all),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -92,6 +94,7 @@ fun ModernDolbySettingsScreen(
                     listState = listState,
                     viewModel = viewModel,
                     navController = navController,
+                    bottomPadding = bottomPadding,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -136,7 +139,7 @@ fun ModernDolbySettingsScreen(
             onDismiss = { showResetDialog = false }
         )
     }
-    
+
     if (showCreditsDialog) {
         CreditsDialog(
             onDismiss = { showCreditsDialog = false }
@@ -150,12 +153,15 @@ private fun ModernDolbySettingsContent(
     listState: LazyListState,
     viewModel: DolbyViewModel,
     navController: NavController,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(
+            start = 20.dp, top = 12.dp, end = 20.dp, bottom = 12.dp + bottomPadding,
+        ),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item {
@@ -194,15 +200,10 @@ private fun ModernDolbySettingsContent(
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                ModernSettingsCard(
-                    title = stringResource(R.string.dolby_ieq),
-                    icon = Icons.Default.GraphicEq
-                ) {
-                    ModernIeqSelector(
-                        currentPreset = state.profileSettings.ieqPreset,
-                        onPresetChange = { viewModel.setIeqPreset(it) }
-                    )
-                }
+                ModernIeqSelector(
+                    currentPreset = state.profileSettings.ieqPreset,
+                    onPresetChange = { viewModel.setIeqPreset(it) }
+                )
             }
         }
 
@@ -217,6 +218,6 @@ private fun ModernDolbySettingsContent(
                 )
             }
         }
-        
+
     }
 }
